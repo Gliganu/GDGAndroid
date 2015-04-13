@@ -1,0 +1,98 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:paddingBottom="@dimen/activity_vertical_margin"
+        android:paddingLeft="@dimen/activity_horizontal_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin"
+        android:paddingTop="@dimen/activity_vertical_margin"
+        tools:context=".MainActivity">
+
+
+        <Button
+            android:id="@+id/articlesButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="readArticlesFromApi"
+            android:text="Get me Articles" />
+
+        <Button
+            android:id="@+id/categoriesButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="readCategoriesFromApi"
+            android:text="Get me Categories" />
+
+        <Button
+            android:id="@+id/deleteButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="deleteTables"
+            android:text="Delete all from DB" />
+
+        <Button
+            android:id="@+id/readCatButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="readCategoriesFromDb"
+            android:text="Read Categories from DB" />
+
+        <Button
+            android:id="@+id/readArtButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="readArticlesFromDb"
+            android:text="Read Articles from DB" />
+
+        <Button
+            android:id="@+id/categoryButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="openCategoryActivity"
+            android:text="Open Category Activity" />
+
+        <Button
+            android:id="@+id/articleButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="openArticleActivity"
+            android:text="Open Article Activity" />
+
+        <Button
+            android:id="@+id/detailsButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="deleteSomeArticles"
+            android:text="Delete some articles" />
+
+
+        <Button
+            android:id="@+id/clearPrefsButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="clearPrefs"
+            android:text="Clear prefs" />
+
+        <Button
+            android:id="@+id/writePrefsButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="writePrefs"
+            android:text="Write Prefs" />
+
+        <Button
+            android:id="@+id/readPrefs"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="readPrefs"
+            android:text="Read Prefs" />
+
+
+    </LinearLayout>
+</ScrollView>

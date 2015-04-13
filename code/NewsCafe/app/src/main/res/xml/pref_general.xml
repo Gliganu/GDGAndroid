@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+
+    <CheckBoxPreference
+        android:defaultValue="@string/pref_enable_notifications_default"
+        android:key="@string/pref_enable_notifications_key"
+        android:summaryOff="@string/pref_enable_notifications_false"
+        android:summaryOn="@string/pref_enable_notifications_true"
+        android:title="@string/pref_enable_notifications_label" />
+
+    <ListPreference
+        android:defaultValue="@string/pref_often_update_default"
+        android:entries="@array/timeframeArray"
+        android:entryValues="@array/timeframeValues"
+        android:summary="%s"
+        android:key="@string/pref_often_update_key"
+        android:title="@string/pref_often_update_title" />
+
+    <ListPreference
+        android:defaultValue="@string/pref_keep_memory_default"
+        android:entries="@array/keepInMemoryArray"
+        android:entryValues="@array/keepInMemoryArrayValues"
+        android:summary="%s"
+        android:key="@string/pref_keep_memory_key"
+        android:title="@string/pref_keep_memory_title" />
+
+    <Preference android:title="Press to reset to factory settings"
+        android:key="button"
+       />
+
+
+</PreferenceScreen>
