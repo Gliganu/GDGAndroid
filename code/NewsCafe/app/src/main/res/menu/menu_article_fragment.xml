@@ -7,7 +7,7 @@
     <item
         android:id="@+id/search_item"
         android:orderInCategory="100"
-        android:title="Search"
+        android:title="@string/search_item"
         app:showAsAction="always" />
 
 

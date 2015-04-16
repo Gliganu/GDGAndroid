@@ -60,7 +60,6 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
     private ListView listView;
     private String searchText;
 
-
     private static IntentFilter syncIntentFilter = new IntentFilter(ACTION_FINISHED_SYNC);
 
     /**
@@ -232,7 +231,7 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
 
             AlertDialog.Builder alert = new AlertDialog.Builder(getActivity());
 
-            alert.setTitle("Search for articles:");
+            alert.setTitle( getActivity().getResources().getString(R.string.search_for_articles));
 
             final EditText input = new EditText(getActivity());
 
@@ -380,7 +379,8 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
             Log.d(ArticleActivity.LOG_TAG, "Search chosen => " + text);
 
             if (searchText != null) {
-                infoTextView.setText("Your search: \"" + searchText + "\"\n ( Click to go back )");
+                infoTextView.setText( getActivity().getResources().getString(R.string.your_search) +" \""+ searchText +
+                        "\"\n" +  getActivity().getResources().getString(R.string.click_go_back) );
             }
 
             infoTextView.setOnClickListener(new View.OnClickListener() {

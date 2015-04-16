@@ -25,7 +25,7 @@
         android:key="@string/pref_keep_memory_key"
         android:title="@string/pref_keep_memory_title" />
 
-    <Preference android:title="Press to reset to factory settings"
+    <Preference android:title="@string/reset_factory_settings"
         android:key="button"
        />
 

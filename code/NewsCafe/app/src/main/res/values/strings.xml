@@ -31,6 +31,16 @@
     <string name="sync_account_type">newscafe.example.com</string>
 
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="select_all">Select All</string>
+    <string name="deselect_all">Deselect All</string>
+    <string name="reset_factory_settings">Press to reset to factory settings</string>
+    <string name="search_item">Search</string>
 
+
+    <string name="search_for_articles">Search for articles:</string>
+    <string name="no_news_selected">No news selected</string>
+    <string name="your_search">Your search:</string>
+    <string name="click_go_back">( Click to go back )</string>
+    <string name="are_you_sure">Are you sure you want to reset to factory settings?</string>
 
 </resources>

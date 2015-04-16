@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="timeframeArray">
+        <item>1 Zi</item>
+        <item>2 Zile</item>
+        <item>3 Zile</item>
+        <item>4 Zile</item>
+        <item>5 Zile</item>
+    </string-array>
+
+    <string-array name="timeframeValues">
+        <item>1 Zi</item>
+        <item>2 Zile</item>
+        <item>3 Zile</item>
+        <item>4 Zile</item>
+        <item>5 Zile</item>
+    </string-array>
+
+    <string-array name="keepInMemoryArray">
+        <item>1 Saptamana</item>
+        <item>2 Saptamani</item>
+        <item>3 Saptamani</item>
+        <item>4 Saptamani</item>
+        <item>5 Saptamani</item>
+    </string-array>
+
+    <string-array name="keepInMemoryArrayValues">
+        <item>1 Saptamana</item>
+        <item>2 Saptamani</item>
+        <item>3 Saptamani</item>
+        <item>4 Saptamani</item>
+        <item>5 Saptamani</item>
+    </string-array>
+
+
+</resources>

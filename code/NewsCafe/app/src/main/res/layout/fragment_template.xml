@@ -10,6 +10,6 @@
         android:layout_gravity="center"
         android:gravity="center"
         android:textSize="25sp"
-        android:text="No news selected" />
+        android:text="@string/no_news_selected" />
 
 </FrameLayout>
