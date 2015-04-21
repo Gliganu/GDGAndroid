@@ -43,21 +43,15 @@ public class ArticleAdapter extends CursorAdapter {
 
         ArticleViewHolder viewHolder = (ArticleViewHolder) view.getTag();
 
-
         String articleCategoryName = cursor.getString(NewsContract.ALL_COLUMNS_CATEGORY_NAME);
 
         String articleTitleName = cursor.getString(ArticleEntry.COLUMN_TITLE_INDEX);
 
-        int firstPar = articleTitleName.indexOf('(');
-        int secondPar = articleTitleName.indexOf(')');
-        String toBeRemoved = articleTitleName.substring(firstPar,secondPar+1);
 
-        String normalizedTitle = articleTitleName.replace(toBeRemoved, "");
-
-        String articleSource = cursor.getString(ArticleEntry.COLUMN_SOURCE_INDEX);
+        String articleSource = ""; //todo replace this
 
         viewHolder.categoryView.setText(articleCategoryName);
-        viewHolder.titleView.setText(normalizedTitle);
+        viewHolder.titleView.setText(articleTitleName);
         viewHolder.sourceView.setText(articleSource);
 
     }

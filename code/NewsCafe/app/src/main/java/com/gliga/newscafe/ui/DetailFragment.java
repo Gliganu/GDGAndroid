@@ -95,7 +95,14 @@ public class DetailFragment extends Fragment {
         Intent shareIntent = new Intent(Intent.ACTION_SEND);
         shareIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET);
         shareIntent.setType("text/plain");
-        shareIntent.putExtra(Intent.EXTRA_TEXT, "Check out this awesome article " + getActivity().getIntent().getStringExtra(SITE_URL));
+        String url;
+
+        if (getArguments() != null) {
+            url = getArguments().getString(DetailFragment.SITE_URL);
+        }else{
+            url = getActivity().getIntent().getStringExtra(SITE_URL);
+        }
+        shareIntent.putExtra(Intent.EXTRA_TEXT, "Check out this awesome article " + url);
         return shareIntent;
     }
 

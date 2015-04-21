@@ -13,16 +13,13 @@ import android.database.MergeCursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.gliga.newscafe.ui.ArticleActivity;
 import com.gliga.newscafe.ui.ArticleFragment;
-import com.gliga.newscafe.ui.CategoryAdapter;
 import com.gliga.newscafe.ui.CategoryFragment;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import static com.gliga.newscafe.data.NewsContract.ArticleEntry;
@@ -55,14 +52,12 @@ public class NewsProvider extends ContentProvider {
                         "." + CategoryEntry._ID);
     }
 
-    private static final String categoryNumberSelection =
+    private static final String sectionNameSelection =
             CategoryEntry.TABLE_NAME + "." +
                     CategoryEntry._ID + " = ? ";
 
     private static final String broadSearchSelection =
             ArticleEntry.COLUMN_TITLE + " LIKE '%' || ? || '%' OR " +
-                    ArticleEntry.COLUMN_SOURCE + " LIKE '%' || ? || '%' OR " +
-                    ArticleEntry.COLUMN_SUMMARY + " LIKE '%' || ? || '%' OR " +
                     CategoryEntry.COLUMN_DISPLAY_CATEGORY_NAME + " LIKE '%' || ? || '%' ";
 
 
@@ -76,8 +71,8 @@ public class NewsProvider extends ContentProvider {
 
         matcher.addURI(authority, NewsContract.PATH_ARTICLE, ARTICLE);
         matcher.addURI(authority, NewsContract.PATH_CATEGORY, CATEGORY);
-        matcher.addURI(authority, NewsContract.PATH_CATEGORY + "/#/*", ARTICLE_BY_CATEGORY);
-        matcher.addURI(authority, NewsContract.PATH_CATEGORY + "/#/*/*", ARTICLE_BY_CATEGORY_WITH_SEARCH);
+        matcher.addURI(authority, NewsContract.PATH_CATEGORY + "/*/*", ARTICLE_BY_CATEGORY);
+        matcher.addURI(authority, NewsContract.PATH_CATEGORY + "/*/*/*", ARTICLE_BY_CATEGORY_WITH_SEARCH);
 
         return matcher;
     }
@@ -136,6 +131,7 @@ public class NewsProvider extends ContentProvider {
 
             case ARTICLE_BY_CATEGORY: {
 
+                Log.d(ArticleActivity.LOG_TAG,"In query, Article_By_Category: ");
                 Cursor[] cursorArray = new Cursor[100];
 
                 SharedPreferences prefs = ArticleFragment.prefs;
@@ -143,13 +139,13 @@ public class NewsProvider extends ContentProvider {
                 Set<String> favouriteCategories = prefs.getStringSet(CategoryFragment.FAVOURITE_CATEGORIES, new HashSet<String>());
 
                 if (favouriteCategories.isEmpty()) {
-                    retCursor = getArticleByCategoryCursor(uri, projection, categoryNumberSelection, new String[]{""+(-1)});
+                    retCursor = getArticleByCategoryCursor(uri, projection, sectionNameSelection, new String[]{""+(-1)});
                 } else {
                     int i = 0;
 
 
                     for (String categoryId : favouriteCategories) {
-                        cursorArray[i] = getArticleByCategoryCursor(uri, projection, categoryNumberSelection, new String[]{categoryId});
+                        cursorArray[i] = getArticleByCategoryCursor(uri, projection, sectionNameSelection, new String[]{categoryId});
                         i++;
                     }
 
@@ -161,20 +157,23 @@ public class NewsProvider extends ContentProvider {
 
             }
             case ARTICLE: {
+                Log.d(ArticleActivity.LOG_TAG,"In query, Article: ");
                 retCursor = mOpenHelper.getReadableDatabase().query(ArticleEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
                 break;
             }
             case CATEGORY: {
+                Log.d(ArticleActivity.LOG_TAG,"In query, Category: ");
                 retCursor = mOpenHelper.getReadableDatabase().query(CategoryEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
                 break;
             }
             case ARTICLE_BY_CATEGORY_WITH_SEARCH: {
 
 
+                Log.d(ArticleActivity.LOG_TAG,"In query, ARTICLE_BY_CATEGORY_WITH_SEARCH: ");
                 String searchParameter = uri.getQueryParameter("q");
 
 
-                retCursor = getArticleByCategoryCursor(uri, projection, broadSearchSelection, new String[]{searchParameter, searchParameter, searchParameter, searchParameter});
+                retCursor = getArticleByCategoryCursor(uri, projection, broadSearchSelection, new String[]{searchParameter, searchParameter});
 
                 break;
             }
@@ -307,6 +306,7 @@ public class NewsProvider extends ContentProvider {
 
             case CATEGORY:
                 returnCount = 0;
+                Log.d(ArticleActivity.LOG_TAG,"Chooses category in bulk insert....");
                 try {
                     db.beginTransaction();
                     for (ContentValues value : values) {
@@ -320,6 +320,7 @@ public class NewsProvider extends ContentProvider {
                     db.endTransaction();
                 }
                 getContext().getContentResolver().notifyChange(uri, null);
+                Log.d(ArticleActivity.LOG_TAG,"Introduced after bulk insert: "+returnCount);
                 return returnCount;
 
             default:

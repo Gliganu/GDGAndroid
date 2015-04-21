@@ -43,5 +43,6 @@
     <string name="are_you_sure">Are you sure you want to reset to factory settings?</string>
 
     <string name="title_activity_detail"></string>
+    <string name="title_activity_debug">DebugActivity</string>
 
 </resources>

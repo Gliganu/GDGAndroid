@@ -3,6 +3,7 @@ package com.gliga.newscafe.ui;
 import android.accounts.Account;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.app.SearchManager;
 import android.content.BroadcastReceiver;
 import android.content.ContentProvider;
 import android.content.ContentResolver;
@@ -16,9 +17,11 @@ import android.net.Uri;
 import android.os.PersistableBundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.FragmentActivity;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -55,9 +58,13 @@ public class ArticleActivity extends ActionBarActivity implements DetailFragment
     public static boolean mTwoPane;
 
 
+
+
+
     public static final String LOG_TAG = "Gliga Debug";
 
     private static ProgressDialog progressDialog;
+    private SearchView searchView;
 
 
     @Override
@@ -85,7 +92,6 @@ public class ArticleActivity extends ActionBarActivity implements DetailFragment
 
 
         NewsSyncAdapter.initializeSyncAdapter(this);
-
     }
 
 
@@ -120,9 +126,55 @@ public class ArticleActivity extends ActionBarActivity implements DetailFragment
 
     }
 
+    public void resetSearchView(){
+
+        searchView.setQuery("", false);
+        searchView.clearFocus();
+        searchView.setIconified(true);
+        searchView.setIconified(true);
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+
         getMenuInflater().inflate(R.menu.menu_article, menu);
+
+        final MenuItem searchItem = menu.findItem(R.id.search_item);
+
+        // Get the SearchView and set the searchable configuration
+        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
+        // Assumes current activity is the searchable activity
+        searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+        searchView.setIconifiedByDefault(true); // Iconify the widget
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String s) {
+                ArticleFragment articleFragment = (ArticleFragment) getSupportFragmentManager().findFragmentById(R.id.article_fragment);
+                articleFragment.startSearch(s);
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String s) {
+                return false;
+            }
+
+
+        });
+
+        searchView.setOnCloseListener(new SearchView.OnCloseListener() {
+            @Override
+            public boolean onClose() {
+
+                ArticleFragment articleFragment = (ArticleFragment) getSupportFragmentManager().findFragmentById(R.id.article_fragment);
+                articleFragment.hideSearch();
+                return false;
+            }
+        });
+
+
         return true;
     }
 
@@ -141,6 +193,13 @@ public class ArticleActivity extends ActionBarActivity implements DetailFragment
             startActivity(intent);
             return true;
         }
+
+//       if (id == R.id.debug_activity_item) {
+//            Intent intent = new Intent(this, DebugActivity.class);
+//            startActivity(intent);
+//            return true;
+//        }
+
 
         return super.onOptionsItemSelected(item);
     }
@@ -172,6 +231,19 @@ public class ArticleActivity extends ActionBarActivity implements DetailFragment
                     .putExtra(DetailFragment.SITE_URL, siteUrl);
             startActivity(intent);
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        ArticleFragment articleFragment = (ArticleFragment) getSupportFragmentManager().findFragmentById(R.id.article_fragment);
+        boolean hidePerformed = articleFragment.hideSearch();
+
+        resetSearchView();
+
+        if(!hidePerformed){
+            super.onBackPressed();
+        }
+
     }
 
     /**

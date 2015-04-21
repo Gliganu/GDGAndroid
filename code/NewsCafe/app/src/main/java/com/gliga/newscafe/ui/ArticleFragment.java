@@ -10,8 +10,11 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
@@ -51,7 +54,10 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
     public static final String INFORMATION_FETCH_TYPE = "infoFetchType";
     public static final String SEARCH_ACTIVATED = "searchActivated";
     public static final String ACTION_FINISHED_SYNC = "your.package.ACTION_FINISHED_SYNC";
+
     private static int currentPosition = -1;
+
+    public static boolean newNewsBrought;
 
     public static SharedPreferences prefs;
     public static SharedPreferences.Editor editor;
@@ -90,7 +96,7 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
         super.onCreate(savedInstanceState);
         getActivity().registerReceiver(syncBroadcastReceiver, syncIntentFilter);
 
-        if(prefs == null){
+        if (prefs == null) {
             prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
             editor = prefs.edit();
         }
@@ -122,7 +128,7 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
                 if (cursor != null) {
 
                     ((DetailFragment.Callback) getActivity())
-                            .onItemSelected(cursor.getString(NewsContract.ALL_COLUMNS_URL_INDEX));
+                            .onItemSelected(cursor.getString(NewsContract.ALL_COLLUMN_SOURCE_URL_INDEX));
 
                 }
             }
@@ -169,6 +175,7 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
     /**
      * If this is the first time the application is started, then special actions need to be performed, such as bringing all the categories information
      * from the api.
+     *
      * @return
      */
     private boolean checkFirstTimeRunning() {
@@ -185,9 +192,9 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
         }
 
         Log.d(ArticleActivity.LOG_TAG, "First time running...");
-       // SharedPreferences.Editor editor = prefs.edit();
+        // SharedPreferences.Editor editor = prefs.edit();
 
-        favouriteCategories.add("26");
+        favouriteCategories.add("science");
 
         editor.putStringSet(CategoryFragment.FAVOURITE_CATEGORIES, favouriteCategories);
         editor.putBoolean(ArticleActivity.FIRST_TIME, true);
@@ -208,6 +215,7 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.menu_article_fragment, menu);
+
     }
 
 
@@ -222,57 +230,21 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
     }
 
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
+    public boolean hideSearch() {
+        final TextView infoTextView = (TextView) getActivity().findViewById(R.id.info_text_view);
 
+        if (infoTextView.getVisibility() == View.VISIBLE) {
 
-        if (id == R.id.search_item) {
-
-            AlertDialog.Builder alert = new AlertDialog.Builder(getActivity());
-
-            alert.setTitle( getActivity().getResources().getString(R.string.search_for_articles));
-
-            final EditText input = new EditText(getActivity());
-
-            alert.setView(input);
-
-
-            alert.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int whichButton) {
-                    searchText = input.getText().toString();
-
-                   // SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
-                   // SharedPreferences.Editor editor = prefs.edit();
-                    editor.putBoolean(SEARCH_ACTIVATED, true);
-                    editor.apply();
-
-                    getLoaderManager().restartLoader(ARTICLE_LOADER, null, ArticleFragment.this);
-
-                    Log.d(ArticleActivity.LOG_TAG, "In onClick...");
-
-
-                }
-            });
-
-            alert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface dialog, int whichButton) {
-                }
-            });
-
-            alert.show();
-
+            infoTextView.setVisibility(View.GONE);
+            editor.putBoolean(SEARCH_ACTIVATED, false);
+            editor.apply();
+            getLoaderManager().restartLoader(ARTICLE_LOADER, null, ArticleFragment.this);
+            return true;
         }
 
-
-        return super.onOptionsItemSelected(item);
+        return false;
     }
 
-    @Override
-    public void onPause() {
-        getActivity().unregisterReceiver(syncBroadcastReceiver);
-        super.onPause();
-    }
 
     @Override
     public void onResume() {
@@ -283,15 +255,10 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 
-        Uri articleByCategoryUri = CategoryEntry.buildArticlesByCategoryUri(2);
-        Uri articleByCategoryWithSearchUri = CategoryEntry.buildArticlesByCategoryWithSearchUri(2, searchText);
+        Uri articleByCategoryUri = CategoryEntry.buildArticlesByCategoryUri("x");
+        Uri articleByCategoryWithSearchUri = CategoryEntry.buildArticlesByCategoryWithSearchUri("x", searchText);
         Uri usedUri;
 
-        //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
-       // SharedPreferences.Editor editor = prefs.edit();
-
-        Set<String> favouriteCategories = prefs.getStringSet(CategoryFragment.FAVOURITE_CATEGORIES, new HashSet<String>());
-        Set<String> currentlyStoredCategories = prefs.getStringSet(CategoryFragment.CURRENTLY_STORED_CATEGORIES, new HashSet<String>());
 
         boolean searchChosen = prefs.getBoolean(SEARCH_ACTIVATED, false);
 
@@ -303,19 +270,6 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
             usedUri = articleByCategoryUri;
         }
 
-        if (favouriteCategories.contains("Top News")) {
-            favouriteCategories.remove("Top News");
-
-
-            favouriteCategories.add("2");
-            Log.d(ArticleActivity.LOG_TAG, "Added to stored categories 2");
-            currentlyStoredCategories.add("2");
-
-
-            editor.putStringSet(CategoryFragment.FAVOURITE_CATEGORIES, favouriteCategories);
-            editor.putStringSet(CategoryFragment.CURRENTLY_STORED_CATEGORIES, currentlyStoredCategories);
-            editor.apply();
-        }
 
         return new CursorLoader(getActivity(),
                 usedUri,
@@ -328,6 +282,7 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
     /**
      * When the load is completed, if no articles were brought, then the app notifies the user of that.
      * It also scrolls to the last article he read in the list, and if it's a tablet, then it keeps it pressed. This is necessary for example at landscape changes
+     *
      * @param loader
      * @param cursor
      */
@@ -336,15 +291,45 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
 
         if (cursor.getCount() == 0) {
             setInfoButtonText("No articles found to match your criteria", true);
-        }else{
-            setInfoButtonText("Enjoy the news",false);
+        } else {
+            setInfoButtonText("Enjoy the news", false);
         }
 
         articleAdapter.swapCursor(cursor);
 
+
+        if(newNewsBrought == true){
+            currentPosition = -1;
+            newNewsBrought = false;
+        }
+
         listView.smoothScrollToPosition(currentPosition);
 
         if (currentPosition != -1 && ArticleActivity.mTwoPane) {
+            listView.setItemChecked(currentPosition, true);
+        }
+
+        if (currentPosition == -1 && ArticleActivity.mTwoPane) {
+
+            currentPosition = 0;
+
+            final int WHAT = 1;
+            Handler handler = new Handler() { //TODO FIX THIS
+                @Override
+                public void handleMessage(Message msg) {
+                    if (msg.what == WHAT) {
+                        listView.performItemClick(
+                                listView.getAdapter().getView(currentPosition, null, null),
+                                currentPosition,
+                                listView.getAdapter().getItemId(currentPosition));
+                    }
+                }
+            };
+
+            handler.sendEmptyMessage(WHAT);
+
+
+
             listView.setItemChecked(currentPosition, true);
         }
 
@@ -355,6 +340,19 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
         getLoaderManager().initLoader(ARTICLE_LOADER, null, this);
     }
 
+
+    public void startSearch(String searchText){
+        this.searchText = searchText;
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        // SharedPreferences.Editor editor = prefs.edit();
+        editor.putBoolean(SEARCH_ACTIVATED, true);
+        editor.apply();
+
+        getLoaderManager().restartLoader(ARTICLE_LOADER, null, ArticleFragment.this);
+
+    }
+
     /**
      * The info panel appears when the user performs a search. It is used to let him know about what he has searhed and if he clicks on it then the previous
      * results are being brought back
@@ -362,7 +360,7 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
     public void setInfoButtonText(String text, boolean visible) {
 
         //SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
-       // final SharedPreferences.Editor editor = prefs.edit();
+        // final SharedPreferences.Editor editor = prefs.edit();
 
         final boolean searchChosen = prefs.getBoolean(SEARCH_ACTIVATED, false);
 
@@ -379,17 +377,17 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
             Log.d(ArticleActivity.LOG_TAG, "Search chosen => " + text);
 
             if (searchText != null) {
-                infoTextView.setText( getActivity().getResources().getString(R.string.your_search) +" \""+ searchText +
-                        "\"\n" +  getActivity().getResources().getString(R.string.click_go_back) );
+                infoTextView.setText(getActivity().getResources().getString(R.string.your_search) + " \"" + searchText +
+                        "\"\n" + getActivity().getResources().getString(R.string.click_go_back));
             }
 
             infoTextView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    infoTextView.setVisibility(View.GONE);
-                    editor.putBoolean(SEARCH_ACTIVATED, false);
-                    editor.apply();
-                    getLoaderManager().restartLoader(ARTICLE_LOADER, null, ArticleFragment.this);
+                    hideSearch();
+                    ArticleActivity articleActivity = (ArticleActivity) getActivity();
+                    articleActivity.resetSearchView();
+
                 }
             });
 

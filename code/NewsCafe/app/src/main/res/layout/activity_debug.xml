@@ -1,0 +1,53 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="com.gliga.newscafe.ui.DebugActivity">
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Get sections from API"
+        android:onClick="bringCategoriesFromApi"/>
+
+     <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Get articles from Api"
+        android:onClick="bringArticlesFromApi"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Read sections from DB"
+        android:onClick="readCategoriesFromDb"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Read articles from DB"
+        android:onClick="readArticlesFromDb"/>
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Delete all from DB"
+        android:onClick="deleteAllFromDb"/>
+
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Clear prefs"
+        android:onClick="clearPrefs"/>
+
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Send Notification"
+        android:onClick="sendNotification"/>
+
+
+</LinearLayout>

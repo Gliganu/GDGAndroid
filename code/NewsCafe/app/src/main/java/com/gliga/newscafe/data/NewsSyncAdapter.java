@@ -2,17 +2,16 @@ package com.gliga.newscafe.data;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
-import android.app.Activity;
+import android.annotation.TargetApi;
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
-import android.app.TaskStackBuilder;
 import android.content.AbstractThreadedSyncAdapter;
 import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SyncRequest;
@@ -21,9 +20,6 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
@@ -44,17 +40,16 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.gliga.newscafe.data.NewsContract.ArticleEntry;
+import static com.gliga.newscafe.data.NewsContract.CategoryEntry;
 
 /**
  * Created by gliga on 3/26/2015.
@@ -66,9 +61,9 @@ public class NewsSyncAdapter extends AbstractThreadedSyncAdapter {
     public static final String ARTICLES_TYPE_JSON = "articles";
     private static final int NEWS_NOTIFICATION_ID = 3004;
 
+    private static int notificatioNumber = 0;
 
-    public static final String BASE_URL = "http://api.feedzilla.com/v1";
-    public static final String FORMAT = ".json";
+    public static final String BASE_URL = "http://content.guardianapis.com";
 
     public static final int SYNC_INTERVAL = 60 * 180;
 
@@ -101,33 +96,32 @@ public class NewsSyncAdapter extends AbstractThreadedSyncAdapter {
         boolean firstTime = prefs.getBoolean(ArticleActivity.FIRST_TIME,false);
 
 
-        sendNotification();
+        //sendNotification();
 
         Log.d(ArticleActivity.LOG_TAG, "Article Fetch:" + articleFetch);
 
         String newsUrl = "";
         String uri;
 
-
         if (!articleFetch) { //we are bringing categories not articles
-            uri = "/categories";
-            newsUrl = BASE_URL + uri + FORMAT;
+            uri = "/sections?api-key=sd6tb3e6rp7qa4e3f93ybgjq";
+            newsUrl = BASE_URL + uri;
 
             getDataFromApi(newsUrl, uri, articleFetch);
 
         } else {//we are bringing articles not categories
 
-
             Log.d(ArticleActivity.LOG_TAG, "NSA: Favourite" + favouriteCategories.toString());
             Log.d(ArticleActivity.LOG_TAG, "NSA: Stored" + categoriesStoredInDatabase.toString());
 
-            Iterator<String> favouriteCategoriesIterator = favouriteCategories.iterator();
 
             for (String neededCategory : favouriteCategories) {
                 if (!categoriesStoredInDatabase.contains(neededCategory)) {
 
-                    uri = "/categories/" + neededCategory + "/articles";
-                    newsUrl = BASE_URL + uri + FORMAT;
+                    ArticleFragment.newNewsBrought = true;
+
+                    uri = "/search?api-key=sd6tb3e6rp7qa4e3f93ybgjq&section="+neededCategory;
+                    newsUrl = BASE_URL + uri;
                     getDataFromApi(newsUrl, uri, articleFetch);
                 }
 
@@ -145,8 +139,8 @@ public class NewsSyncAdapter extends AbstractThreadedSyncAdapter {
 
                if (!categoriesStoredInDatabase.contains(neededCategory)) {
 
-                   uri = "/categories/" + neededCategory + "/articles";
-                   newsUrl = BASE_URL + uri + FORMAT;
+                   uri = "/search?api-key=sd6tb3e6rp7qa4e3f93ybgjq&section="+neededCategory;
+                   newsUrl = BASE_URL + uri;
                    getDataFromApi(newsUrl, uri, articleFetch);
                }
 
@@ -201,20 +195,16 @@ public class NewsSyncAdapter extends AbstractThreadedSyncAdapter {
             if (!articleFetch) {
                 getCategoriesDataFromJson(newsJsonString);
             } else {
-                String sentUrl = uri;
-                int firstIndex = sentUrl.indexOf('/', 3) + 1;
-                int lastIndex = sentUrl.lastIndexOf('/');
-                int categoryId = Integer.parseInt(sentUrl.substring(firstIndex, lastIndex));
-                getArticlesDataFromJson(newsJsonString, categoryId);
+                getArticlesDataFromJson(newsJsonString);
             }
 
             deleteOldNews();
 
 
+
         } catch (IOException e) {
             Log.e(LOG_TAG, "Error from IO Exception " + e.getMessage());
             e.printStackTrace();
-            return;
 
         } finally {
             if (urlConnection != null) {
@@ -305,16 +295,13 @@ public class NewsSyncAdapter extends AbstractThreadedSyncAdapter {
     }
 
 
-    private void getArticlesDataFromJson(String newsJsonString, int categoryId) {
+    private void getArticlesDataFromJson(String newsJsonString) {
 
-        final String ARTICLES = "articles";
-        final String AUTHOR = "author";
-        final String PUBLISH_DATE = "publish_date";
-        final String SOURCE = "source";
-        final String SOURCE_URL = "source_url";
-        final String SUMMARY = "summary";
-        final String TITLE = "title";
-        final String URL = "url";
+        final String ID = "id";
+        final String SECTION_ID = "sectionId";
+        final String WEB_TITLE = "webTitle";
+        final String SOURCE_URL = "webUrl";
+        final String URL = "apiUrl";
 
         SharedPreferences prefs = ArticleFragment.prefs;
         SharedPreferences.Editor editor = prefs.edit();
@@ -325,35 +312,36 @@ public class NewsSyncAdapter extends AbstractThreadedSyncAdapter {
 
             JSONObject articleObject = new JSONObject(newsJsonString);
 
-            JSONArray articleArray = articleObject.getJSONArray(ARTICLES);
+            JSONObject response = articleObject.getJSONObject("response");
+
+            JSONArray articleArray = response.getJSONArray("results");
 
             Vector<ContentValues> cVVector = new Vector<ContentValues>(articleArray.length());
 
+            String categoryId = "";
+
             for (int i = 0; i < 5; i++) {
 
-                // Get the JSON object representing the day
                 JSONObject article = articleArray.getJSONObject(i);
 
-//                String publishDate = article.getString(PUBLISH_DATE);
                 String publishDate = formatter.format(new Date(System.currentTimeMillis()));
 
-                String source = article.getString(SOURCE);
+                String articleId = article.getString(ID);
+                categoryId = article.getString(SECTION_ID);
+                String title = article.getString(WEB_TITLE);
                 String sourceUrl = article.getString(SOURCE_URL);
-                String summary = article.getString(SUMMARY);
-                String title = article.getString(TITLE);
                 String url = article.getString(URL);
 
                 ContentValues categoryValues = new ContentValues();
 
+                categoryValues.put(ArticleEntry._ID, articleId);
                 categoryValues.put(ArticleEntry.COLUMN_PUBLISH_DATE, publishDate);
-                categoryValues.put(ArticleEntry.COLUMN_SOURCE, source);
                 categoryValues.put(ArticleEntry.COLUMN_SOURCE_URL, sourceUrl);
-                categoryValues.put(ArticleEntry.COLUMN_SUMMARY, summary);
                 categoryValues.put(ArticleEntry.COLUMN_TITLE, title);
                 categoryValues.put(ArticleEntry.COLUMN_URL, url);
                 categoryValues.put(ArticleEntry.COLUMN_CATEGORY_ID, categoryId);
 
-                Log.d(ArticleActivity.LOG_TAG, "From JSON: ( Article )  " + title.substring(0,5));
+                Log.d(ArticleActivity.LOG_TAG, "From JSON: ( Article )  " + title);
 
                 cVVector.add(categoryValues);
 
@@ -369,18 +357,15 @@ public class NewsSyncAdapter extends AbstractThreadedSyncAdapter {
 
 
             Log.d(LOG_TAG, "Added to stored categories from sync adapter: " + categoryId);
-            categoriesStoredInDatabase.add("" + categoryId);
+            categoriesStoredInDatabase.add(categoryId);
 
             Log.d(ArticleActivity.LOG_TAG, "Putting into stored: NSA " + categoriesStoredInDatabase);
-
-
-
 
             editor.putStringSet(CategoryFragment.CURRENTLY_STORED_CATEGORIES, categoriesStoredInDatabase);
 
             editor.apply();
 
-//            Log.d(LOG_TAG, "Sync Complete for articles. " + cVVector.size() + " Inserted");
+            Log.d(LOG_TAG, "Sync Complete for articles. " + cVVector.size() + " Inserted");
 
 
         } catch (JSONException e) {
@@ -390,42 +375,35 @@ public class NewsSyncAdapter extends AbstractThreadedSyncAdapter {
 
     private void getCategoriesDataFromJson(String newsJsonString) {
 
-        final String CATEGORY_NUMBER = "category_id";
-        final String CATEGORY_DISPLAY_NAME = "display_category_name";
-        final String CATEGORY_URL_CATEGORY_NAME = "url_category_name";
-
+        Log.d(ArticleActivity.LOG_TAG,"Parsing sections...");
 
         try {
-            JSONArray categoriesArray = new JSONArray(newsJsonString);
 
-            Vector<ContentValues> cVVector = new Vector<ContentValues>(categoriesArray.length());
+            JSONObject genericObject = new JSONObject(newsJsonString);
 
-            for (int i = 0; i < categoriesArray.length(); i++) {
-                // These are the values that will be collected.
-                int categoryNumber;
-                String categoryDisplayName;
-                String categoryUrlName;
+            JSONObject response = genericObject.getJSONObject("response");
 
-                // Get the JSON object representing the day
-                JSONObject category = categoriesArray.getJSONObject(i);
+            JSONArray results = response.getJSONArray("results");
 
-                categoryNumber = category.getInt(CATEGORY_NUMBER);
-                categoryDisplayName = category.getString(CATEGORY_DISPLAY_NAME);
-                categoryUrlName = category.getString(CATEGORY_URL_CATEGORY_NAME);
+            Vector<ContentValues> cVVector = new Vector<ContentValues>(results.length());
 
+            for (int i = 0; i < results.length(); i++) {
+
+                JSONObject category = results.getJSONObject(i);
+                String categoryId = category.getString("id");
+                String categoryWebTitle = category.getString("webTitle");
+
+
+//      These are the values that will be collected.
 
                 ContentValues categoryValues = new ContentValues();
 
-//                categoryValues.put(CategoryEntry.COLUMN_CATEGORY_NUMBER, categoryNumber);
-                categoryValues.put(NewsContract.CategoryEntry._ID, categoryNumber);
-                categoryValues.put(NewsContract.CategoryEntry.COLUMN_DISPLAY_CATEGORY_NAME, categoryDisplayName);
-                categoryValues.put(NewsContract.CategoryEntry.COLUMN_URL_CATEGORY_NAME, categoryUrlName);
+                categoryValues.put(CategoryEntry._ID, categoryId);
+                categoryValues.put(CategoryEntry.COLUMN_DISPLAY_CATEGORY_NAME, categoryWebTitle);
 
-                Log.d(ArticleActivity.LOG_TAG, "From JSON: (Category)  " + categoryDisplayName);
+                Log.d(ArticleActivity.LOG_TAG, "From JSON: (Category)  " + categoryWebTitle);
 
-                if (categoryNumber != 1314) {
-                    cVVector.add(categoryValues);
-                }
+                cVVector.add(categoryValues);
 
             }
 
@@ -433,9 +411,11 @@ public class NewsSyncAdapter extends AbstractThreadedSyncAdapter {
             if (cVVector.size() > 0) {
                 ContentValues[] cvArray = new ContentValues[cVVector.size()];
                 cVVector.toArray(cvArray);
-                getContext().getContentResolver().bulkInsert(NewsContract.CategoryEntry.CONTENT_URI, cvArray);
+                getContext().getContentResolver().bulkInsert(CategoryEntry.CONTENT_URI, cvArray);
 
             }
+
+            Log.d(ArticleActivity.LOG_TAG, "All good so far");
 
 
         } catch (JSONException e) {
@@ -445,51 +425,35 @@ public class NewsSyncAdapter extends AbstractThreadedSyncAdapter {
 
     }
 
-    public void readCategoriesFromDb() {
-        Cursor cursor = getContext().getContentResolver().query(NewsContract.CategoryEntry.CONTENT_URI, null, null, null, null);
+    public static void readCategoriesFromDb(Context context) {
+
+
+        Cursor cursor = context.getContentResolver().query(CategoryEntry.CONTENT_URI, null, null, null, null);
 
         cursor.moveToFirst();
 
         while (cursor.moveToNext()) {
-            //int indexCatNumber = cursor.getColumnIndex(CategoryEntry.COLUMN_CATEGORY_NUMBER);
-            int indexCatNumber = cursor.getColumnIndex(NewsContract.CategoryEntry._ID);
-            int indexCatDisplayName = cursor.getColumnIndex(NewsContract.CategoryEntry.COLUMN_DISPLAY_CATEGORY_NAME);
-            int indexCatUrlName = cursor.getColumnIndex(NewsContract.CategoryEntry.COLUMN_URL_CATEGORY_NAME);
 
-            int readCatNumber = cursor.getInt(indexCatNumber);
-            String readDisplayName = cursor.getString(indexCatDisplayName);
-            String stringreadUrlName = cursor.getString(indexCatUrlName);
+            String sectionId = cursor.getString(CategoryEntry.COLUMN__ID_INDEX);
+            String sectionName = cursor.getString(CategoryEntry.COLUMN_DISPLAY_CATEGORY_NAME_INDEX);
 
-            Log.d(ArticleActivity.LOG_TAG, "From DB: " + readCatNumber + "---" + readDisplayName);
+            Log.d(ArticleActivity.LOG_TAG, "From DB:(Category) --- " + sectionName);
         }
 
         cursor.close();
     }
 
-    public void readArticlesFromDb() {
-        Cursor cursor = getContext().getContentResolver().query(ArticleEntry.CONTENT_URI, null, null, null, null);
+    public static void readArticlesFromDb(Context context) {
+        Cursor cursor = context.getContentResolver().query(ArticleEntry.CONTENT_URI, null, null, null, null);
 
         cursor.moveToFirst();
 
         while (cursor.moveToNext()) {
-            int indexPublishDate = cursor.getColumnIndex(ArticleEntry.COLUMN_PUBLISH_DATE);
-            int indexSource = cursor.getColumnIndex(ArticleEntry.COLUMN_SOURCE);
-            int indexSourceUrl = cursor.getColumnIndex(ArticleEntry.COLUMN_SOURCE_URL);
-            int indexSummary = cursor.getColumnIndex(ArticleEntry.COLUMN_SUMMARY);
-            int indexTitle = cursor.getColumnIndex(ArticleEntry.COLUMN_TITLE);
-            int indexUrl = cursor.getColumnIndex(ArticleEntry.COLUMN_URL);
-            int indexCategoryNumber = cursor.getColumnIndex(ArticleEntry.COLUMN_CATEGORY_ID);
 
-            String publishDate = cursor.getString(indexPublishDate);
-            String source = cursor.getString(indexSource);
-            String sourceUrl = cursor.getString(indexSourceUrl);
-            String summary = cursor.getString(indexSummary);
-            String title = cursor.getString(indexTitle);
-            String url = cursor.getString(indexUrl);
-            int categoryIndex = cursor.getInt(indexCategoryNumber);
+            String title = cursor.getString(ArticleEntry.COLUMN_TITLE_INDEX);
 
 
-            Log.d(ArticleActivity.LOG_TAG, "From DB ( Article ) " + categoryIndex);
+            Log.d(ArticleActivity.LOG_TAG, "From DB ( Article ) " + title);
         }
 
         cursor.close();
@@ -588,8 +552,9 @@ public class NewsSyncAdapter extends AbstractThreadedSyncAdapter {
         getSyncAccount(context);
     }
 
-    private void sendNotification() {
+    public  void sendNotification() {
 
+        Context context = getContext();
 
         //checking the last update and notify if it' the first of the day
         SharedPreferences prefs =ArticleFragment.prefs;
@@ -607,34 +572,49 @@ public class NewsSyncAdapter extends AbstractThreadedSyncAdapter {
 
         if (System.currentTimeMillis() - lastSync >= 1000 * 60 * 60 * 24) {
 
-            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context)
-                    .setSmallIcon(R.drawable.ic_launcher)
-                    .setContentTitle("News Cafe")
-                    .setContentText("Find out what happened today in the world!");
+                // this will be routed to onNewIntent(), SendToGCMActivity is this class
+                Intent onNotificationDiscarded = new Intent(context,ArticleActivity.class);
+                PendingIntent notificationIntent = PendingIntent.getActivity(context, 0, onNotificationDiscarded, 0);
+                Notification notification = null;
 
+                // notificationCounter is a private static AtomicInteger
+                int notificationNumber = notificatioNumber;
+                notificatioNumber++;
 
-            Intent resultIntent = new Intent(context, ArticleActivity.class);
-            TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
+                NotificationCompat.Builder builder = new NotificationCompat.Builder(context)
+                        .setSmallIcon(R.drawable.ic_launcher)
+                        .setContentTitle("News Cafe")
+                        .setContentText("Find out what happened today in the world!")
+                        .setContentIntent(notificationIntent)
+                        .setDeleteIntent(PendingIntent.getActivity(context, 0, onNotificationDiscarded, 0))
+                                // update the counter
+                        .setNumber(notificationNumber);
 
-            stackBuilder.addNextIntent(resultIntent);
-            PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+                if (Build.VERSION.SDK_INT > 15) {
+                    // for some reason Notification.PRIORITY_DEFAULT doesn't show the counter
+                    builder.setPriority(Notification.PRIORITY_HIGH);
+                    notification = builder.build();
+                } else {
+                    notification = builder.getNotification();
+                }
 
-            mBuilder.setContentIntent(resultPendingIntent);
-            mBuilder.setAutoCancel(true);
-            NotificationManager mNotificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+                // notifications disappear after the user taps on them
+                notification.flags |= Notification.FLAG_AUTO_CANCEL;
+                NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
-            //mID allows you to update the notification later on
-
-            mNotificationManager.notify(NEWS_NOTIFICATION_ID, mBuilder.build());
+                // cancel previous notification to clean up garbage in the status bar
+                nm.cancel(notificationNumber - 1);
+                // add new notification
+                nm.notify(notificationNumber, notification);
 
             //refreshing last sync
             SharedPreferences.Editor editor = prefs.edit();
             editor.putLong(lastNotificationKey, System.currentTimeMillis());
             editor.apply();
 
-            //}
         }
     }
+
 
 
 }

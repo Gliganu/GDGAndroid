@@ -30,25 +30,22 @@ public class NewsDbHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
 
-        final String SQL_CREATE_LOCATION_TABLE = "CREATE TABLE " + CategoryEntry.TABLE_NAME + " ( " +
-                CategoryEntry._ID + " INTEGER PRIMARY KEY ON CONFLICT IGNORE ," +
-                CategoryEntry.COLUMN_DISPLAY_CATEGORY_NAME + " TEXT NOT NULL, " +
-                CategoryEntry.COLUMN_URL_CATEGORY_NAME + " TEXT NOT NULL " +
+        final String SQL_CREATE_CATEGORY_TABLE = "CREATE TABLE " + CategoryEntry.TABLE_NAME + " ( " +
+                CategoryEntry._ID + " TEXT PRIMARY KEY ON CONFLICT IGNORE ," +
+                CategoryEntry.COLUMN_DISPLAY_CATEGORY_NAME + " TEXT NOT NULL " +
                 ");";
 
 
-        final String SQL_CREATE_WEATHER_TABLE = "CREATE TABLE " + ArticleEntry.TABLE_NAME + " ( " +
+        final String SQL_CREATE_ARTICLE_TABLE = "CREATE TABLE " + ArticleEntry.TABLE_NAME + " ( " +
 
-                ArticleEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                ArticleEntry._ID + " TEXT PRIMARY KEY ON CONFLICT IGNORE ," +
 
                 // the ID of the location entry associated with this weather data
                 ArticleEntry.COLUMN_PUBLISH_DATE + " TEXT NOT NULL, " +
-                ArticleEntry.COLUMN_SOURCE + " TEXT NOT NULL, " +
                 ArticleEntry.COLUMN_SOURCE_URL + " TEXT NOT NULL," +
-                ArticleEntry.COLUMN_SUMMARY + " TEXT NOT NULL," +
                 ArticleEntry.COLUMN_TITLE + " TEXT NOT NULL," +
                 ArticleEntry.COLUMN_URL + " TEXT NOT NULL," +
-                ArticleEntry.COLUMN_CATEGORY_ID + " INTEGER NOT NULL," +
+                ArticleEntry.COLUMN_CATEGORY_ID + " TEXT NOT NULL," +
 
                 " UNIQUE (" + ArticleEntry.COLUMN_TITLE + ") ON CONFLICT IGNORE " +
 
@@ -56,8 +53,8 @@ public class NewsDbHelper extends SQLiteOpenHelper {
                 " FOREIGN KEY (" + ArticleEntry.COLUMN_CATEGORY_ID + ") REFERENCES " +
                 CategoryEntry.TABLE_NAME + "(" + CategoryEntry._ID + ")) ; ";
 
-        sqLiteDatabase.execSQL(SQL_CREATE_LOCATION_TABLE);
-        sqLiteDatabase.execSQL(SQL_CREATE_WEATHER_TABLE);
+        sqLiteDatabase.execSQL(SQL_CREATE_CATEGORY_TABLE);
+        sqLiteDatabase.execSQL(SQL_CREATE_ARTICLE_TABLE);
         Log.d(ArticleActivity.LOG_TAG, "Creating new db...");
     }
 
