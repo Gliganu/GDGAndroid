@@ -377,24 +377,11 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
             Log.d(ArticleActivity.LOG_TAG, "Search chosen => " + text);
 
             if (searchText != null) {
-                infoTextView.setText(getActivity().getResources().getString(R.string.your_search) + " \"" + searchText +
-                        "\"\n" + getActivity().getResources().getString(R.string.click_go_back));
+                infoTextView.setText(getActivity().getResources().getString(R.string.your_search) + " \"" + searchText);
             }
-
-            infoTextView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    hideSearch();
-                    ArticleActivity articleActivity = (ArticleActivity) getActivity();
-                    articleActivity.resetSearchView();
-
-                }
-            });
-
 
         } else {
             infoTextView.setText(text);
-
         }
 
 
