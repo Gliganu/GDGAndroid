@@ -152,7 +152,14 @@ public class ArticleActivity extends ActionBarActivity implements DetailFragment
             @Override
             public boolean onQueryTextSubmit(String s) {
                 ArticleFragment articleFragment = (ArticleFragment) getSupportFragmentManager().findFragmentById(R.id.article_fragment);
-                articleFragment.startSearch(s);
+
+                SharedPreferences.Editor editor = ArticleFragment.editor;
+
+                editor.putString(ArticleFragment.SEARCH_TEXT_PREF_KEY,s);
+                editor.commit();
+
+//                articleFragment.startSearch(s);
+                articleFragment.startSearch();
                 resetSearchView();
                 return false;
             }

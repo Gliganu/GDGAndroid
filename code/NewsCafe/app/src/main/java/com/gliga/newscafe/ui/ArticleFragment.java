@@ -49,7 +49,9 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
 
     private static final String SEARCH_TEXT = "searchText";
 
+
     public static final int ARTICLE_LOADER = 1;
+    public static final String SEARCH_TEXT_PREF_KEY = "searchTextPrefKey";
     public static final String CURRENT_POSITION = "currentPosition";
     public static final String INFORMATION_FETCH_TYPE = "infoFetchType";
     public static final String SEARCH_ACTIVATED = "searchActivated";
@@ -166,7 +168,12 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
                 searchView.setText(savedInstanceState.getString(SEARCH_TEXT));
             }
 
+        }
 
+        boolean searchChosen = prefs.getBoolean(SEARCH_ACTIVATED, false);
+
+        if(searchChosen){
+            startSearch();
         }
 
 
@@ -341,11 +348,10 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
     }
 
 
-    public void startSearch(String searchText){
-        this.searchText = searchText;
+    public void startSearch(){
 
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
-        // SharedPreferences.Editor editor = prefs.edit();
+        this.searchText =  prefs.getString(SEARCH_TEXT_PREF_KEY,"");
+
         editor.putBoolean(SEARCH_ACTIVATED, true);
         editor.apply();
 
@@ -377,7 +383,7 @@ public class ArticleFragment extends Fragment implements LoaderManager.LoaderCal
             Log.d(ArticleActivity.LOG_TAG, "Search chosen => " + text);
 
             if (searchText != null) {
-                infoTextView.setText(getActivity().getResources().getString(R.string.your_search) + " \"" + searchText);
+                infoTextView.setText(getActivity().getResources().getString(R.string.your_search) + " \"" + searchText +"\"");
             }
 
         } else {
